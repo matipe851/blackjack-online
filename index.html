@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackjack Online — Banca rotativa</title>
+<style>
+  :root{
+    --felt-1:#0d5c3d;--felt-2:#083d29;--gold:#d9b25a;--cream:#f7f2e7;
+    --red:#c02637;--ink:#20232a;--wood:#3a2416;
+    --win:#3fae6a;--lose:#c94b52;--push:#e0b447;--bj:#d9b25a;
+    --shadow:0 10px 30px rgba(0,0,0,.35);--seat-bg:rgba(3,28,20,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--cream);background:radial-gradient(120% 90% at 50% -10%,#17493a 0%,#0c3225 55%,#071d16 100%);
+    min-height:100%;-webkit-font-smoothing:antialiased;padding:16px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:700}
+
+  .card-panel{max-width:460px;margin:6vh auto;background:linear-gradient(180deg,#0f5138,#0a3a28);
+    border:1px solid rgba(217,178,90,.35);border-radius:22px;box-shadow:var(--shadow);padding:32px 28px}
+  .brand{text-align:center;margin-bottom:18px}
+  .brand .suit-row{font-size:24px;letter-spacing:6px;color:var(--gold);margin-bottom:6px}
+  .brand h1{font-size:32px}
+  .brand p{color:#c7d8cf;margin-top:6px;font-size:13px}
+  label.lbl{display:block;font-size:13px;color:#bcd2c8;margin:16px 0 7px}
+  .inp{width:100%;padding:13px 14px;border-radius:11px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(2,22,15,.55);color:var(--cream);font-size:15px}
+  .inp:focus{outline:none;border-color:var(--gold)}
+  .inp::placeholder{color:#7fa093}
+  .btn{width:100%;margin-top:18px;padding:15px;border:none;border-radius:13px;cursor:pointer;
+    font-size:16px;font-weight:800;letter-spacing:.3px;transition:transform .08s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn.gold{background:linear-gradient(180deg,#e6c169,#c99a3f);color:#241a06;box-shadow:0 8px 20px rgba(201,154,63,.35)}
+  .btn.ghost{background:rgba(3,28,20,.55);color:var(--cream);border:1px solid rgba(217,178,90,.4)}
+  .btn.green{background:linear-gradient(180deg,#3fae6a,#2c8850);color:#04240f}
+  .switch{text-align:center;margin-top:16px;font-size:13px;color:#bcd2c8}
+  .switch a{color:var(--gold);cursor:pointer;text-decoration:underline}
+  .msg{min-height:18px;margin-top:12px;text-align:center;font-size:13px;color:#e79aa0}
+  .msg.okmsg{color:#9fe0b6}
+  .divider{display:flex;align-items:center;gap:10px;margin:22px 0 4px;color:#7fa093;font-size:12px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.12)}
+  .code-box{letter-spacing:6px;font-size:26px;text-align:center;font-weight:800;color:var(--gold);
+    background:rgba(2,22,15,.5);border-radius:12px;padding:14px;margin-top:6px;font-family:Georgia,serif}
+
+  /* Lobby list */
+  .lobby-players{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+  .lp{display:flex;align-items:center;gap:10px;background:rgba(2,22,15,.5);border-radius:11px;padding:10px 12px}
+  .lp .dot{width:22px;height:22px;border-radius:50%;background:rgba(217,178,90,.2);color:var(--gold);
+    display:grid;place-items:center;font-size:12px;font-weight:800}
+  .lp .host-tag{margin-left:auto;font-size:10.5px;background:var(--gold);color:#241a06;padding:3px 8px;border-radius:20px;font-weight:800}
+  .lp .me-tag{margin-left:auto;font-size:10.5px;background:rgba(255,255,255,.14);padding:3px 8px;border-radius:20px}
+
+  /* Top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .round-tag{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .round-tag .round{font-family:Georgia,serif;font-size:20px}
+  .round-tag .cycle{font-size:12px;color:#a9c3b7;background:rgba(3,28,20,.5);padding:4px 10px;border-radius:20px}
+  .banca-now{background:var(--gold);color:#241a06;font-weight:800;padding:6px 14px;border-radius:20px;font-size:14px}
+  .top-actions{display:flex;gap:8px}
+  .mini-btn{background:rgba(3,28,20,.55);border:1px solid rgba(217,178,90,.35);color:var(--cream);
+    padding:9px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
+  .mini-btn:hover{background:rgba(217,178,90,.16)}
+
+  /* Table */
+  .table{position:relative;background:radial-gradient(130% 110% at 50% 8%,var(--felt-1),var(--felt-2) 70%);
+    border:10px solid var(--wood);border-radius:120px/70px;
+    box-shadow:inset 0 0 0 3px rgba(217,178,90,.35),inset 0 12px 60px rgba(0,0,0,.4),var(--shadow);
+    padding:26px 22px 30px}
+  .felt-line{text-align:center;color:rgba(217,178,90,.65);font-family:Georgia,serif;font-size:12px;letter-spacing:3px;margin-bottom:6px}
+  .status-line{text-align:center;font-size:15px;color:#eaf4ee;min-height:22px;margin-bottom:14px;font-weight:600}
+  .status-line .who{color:var(--gold)}
+  .banca-seat-wrap{display:flex;justify-content:center;margin-bottom:8px}
+  .players-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:18px}
+  .seat{background:var(--seat-bg);border:1px solid rgba(255,255,255,.08);border-radius:16px;
+    padding:12px 12px 14px;min-width:180px;max-width:230px;flex:1 1 180px;position:relative;
+    transition:box-shadow .2s ease,border-color .2s ease}
+  .seat.banca{border-color:rgba(217,178,90,.7);background:rgba(30,24,6,.5);min-width:230px;max-width:340px}
+  .seat.active{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 26px rgba(217,178,90,.5);animation:pulse 1.8s ease-in-out infinite}
+  .seat.me{outline:2px dashed rgba(217,178,90,.55);outline-offset:3px}
+  .seat.done{opacity:.82}
+  .seat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .seat-name{font-weight:700;font-size:15px;display:flex;align-items:center;gap:7px}
+  .role-chip{font-size:10.5px;padding:3px 8px;border-radius:20px;font-weight:800}
+  .role-chip.banca{background:var(--gold);color:#241a06}
+  .role-chip.player{background:rgba(255,255,255,.12);color:#dbe9e1}
+  .seat-val{font-size:13px;color:#bcd2c8}.seat-val b{color:var(--cream);font-size:15px}
+  .cards{display:flex;gap:6px;min-height:96px;align-items:flex-end;flex-wrap:wrap}
+  .card{width:62px;height:88px;border-radius:9px;background:var(--cream);position:relative;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);border:1px solid rgba(0,0,0,.15);flex:0 0 auto;font-family:Georgia,serif}
+  .card.deal{animation:dealin .45s cubic-bezier(.2,.9,.3,1.2) both}
+  .card .corner{position:absolute;font-size:13px;font-weight:700;line-height:1;text-align:center}
+  .card .corner.tl{top:6px;left:6px}.card .corner.br{bottom:6px;right:6px;transform:rotate(180deg)}
+  .card .pip{position:absolute;inset:0;display:grid;place-items:center;font-size:30px}
+  .card.red{color:var(--red)}.card.black{color:var(--ink)}
+  .card.back{background:repeating-linear-gradient(45deg,#7a1420 0 8px,#96202d 8px 16px);border:2px solid var(--cream)}
+  .card.back::after{content:"\2660";position:absolute;inset:0;display:grid;place-items:center;color:rgba(247,242,231,.85);font-size:26px}
+  .badge{margin-top:10px;display:inline-block;font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:20px;animation:pop .3s ease both}
+  .badge.win{background:var(--win);color:#062a15}.badge.lose{background:var(--lose);color:#2a0608}
+  .badge.push{background:var(--push);color:#2a2206}.badge.blackjack{background:linear-gradient(90deg,#f0d375,#c99a3f);color:#241a06}
+  .badge.bust{background:#7d2a2f;color:#ffd9dc}.badge.wait{background:rgba(255,255,255,.1);color:#c8dcd2}.badge.turn{background:var(--gold);color:#241a06}
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+  .act-btn{padding:14px 26px;border:none;border-radius:12px;cursor:pointer;font-size:16px;font-weight:800;box-shadow:var(--shadow);transition:transform .08s ease}
+  .act-btn:hover{transform:translateY(-1px)}.act-btn:disabled{opacity:.5;cursor:wait}
+  .act-btn.hit{background:linear-gradient(180deg,#e6c169,#c99a3f);color:#241a06}
+  .act-btn.stand{background:linear-gradient(180deg,#dfe7e2,#b9c8c0);color:#20232a}
+  .act-btn.auto{background:rgba(3,28,20,.6);color:var(--cream);border:1px solid rgba(217,178,90,.4)}
+  .act-btn.next{background:linear-gradient(180deg,#3fae6a,#2c8850);color:#04240f}
+  .controls .ctx{width:100%;text-align:center;font-size:14px;color:#cfe2d8;margin-bottom:2px}
+  .waiting{text-align:center;color:#cfe2d8;font-size:15px;margin-top:18px}
+
+  .overlay{position:fixed;inset:0;background:rgba(3,12,8,.72);display:grid;place-items:center;z-index:50;padding:16px}
+  .panel{background:linear-gradient(180deg,#0f5138,#093524);border:1px solid rgba(217,178,90,.4);
+    border-radius:18px;max-width:640px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;
+    border-bottom:1px solid rgba(255,255,255,.1);position:sticky;top:0;background:#0e4c34}
+  .panel-head h2{font-size:20px;color:var(--gold)}
+  .x-btn{background:none;border:none;color:var(--cream);font-size:22px;cursor:pointer}
+  table.score{width:100%;border-collapse:collapse;font-size:13px}
+  table.score th,table.score td{padding:9px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
+  table.score th{color:#a9c3b7;font-weight:700;font-size:11.5px}
+  table.score td.name{text-align:left;font-weight:700}
+  table.score tr.lead td{background:rgba(217,178,90,.14)}
+  .rank-num{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:rgba(255,255,255,.12);font-weight:800;margin-right:6px;font-size:12px}
+  .rank-num.g{background:var(--gold);color:#241a06}
+  .pts{color:var(--gold);font-weight:800}
+  .panel-note{padding:12px 20px 18px;color:#9fbbb0;font-size:12px}
+
+  @keyframes dealin{from{opacity:0;transform:translateY(-26px) rotate(-7deg) scale(.9)}to{opacity:1;transform:none}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(217,178,90,.35)}50%{box-shadow:0 0 0 2px var(--gold),0 0 30px rgba(217,178,90,.65)}}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.card.deal,.seat.active,.badge{animation:none}}
+  @media (max-width:640px){
+    body{padding:10px}
+    .table{border-radius:26px;padding:18px 12px 22px;border-width:7px}
+    .seat,.seat.banca{min-width:100%;max-width:100%;flex:1 1 100%}
+    .card{width:52px;height:74px}.card .pip{font-size:24px}
+    .act-btn{flex:1;min-width:120px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// ============================================================
+//  CONFIG — completá con los datos de tu proyecto Supabase
+//  (Settings → API). La anon key es pública: va acá sin problema,
+//  la seguridad la da el RLS.
+// ============================================================
+const SUPABASE_URL  = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_ANON = 'TU-ANON-KEY';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ---------- Estado del cliente ----------
+let session = null;
+let authMode = 'signin';   // signin | signup
+let ctx = { gameId:null, roomCode:null, hostId:null, view:null, channel:null, showScore:false, busy:false };
+let msg = { text:'', ok:false };
+const seen = new Set();
+
+const app = () => document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const myId = () => session?.user?.id;
+const savedName = () => localStorage.getItem('bj_name') || '';
+
+// ---------- Llamadas al servidor ----------
+async function api(path, body){
+  const { data:{ session:s } } = await sb.auth.getSession();
+  const r = await fetch('/api/'+path, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+s.access_token },
+    body: JSON.stringify(body||{}),
+  });
+  const j = await r.json().catch(()=>({error:'Respuesta inválida'}));
+  if(!r.ok) throw new Error(j.error || 'Error del servidor');
+  return j;
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+async function init(){
+  const { data } = await sb.auth.getSession();
+  session = data.session;
+  sb.auth.onAuthStateChange((_e, s)=>{ session = s; if(!s){ leaveGame(true); } render(); });
+  render();
+}
+async function signIn(){
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('pass').value;
+  setBusy(true);
+  const { error } = await sb.auth.signInWithPassword({ email, password:pass });
+  setBusy(false);
+  if(error){ setMsg(error.message,false); } else { setMsg('',true); render(); }
+}
+async function signUp(){
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('pass').value;
+  setBusy(true);
+  const { error } = await sb.auth.signUp({ email, password:pass });
+  setBusy(false);
+  if(error){ setMsg(error.message,false); }
+  else setMsg('Cuenta creada. Si tu proyecto pide confirmar el mail, revisá tu casilla; si no, ya podés entrar.',true);
+}
+async function signOut(){ await sb.auth.signOut(); }
+
+// ============================================================
+//  CREAR / UNIRSE
+// ============================================================
+async function doCreate(){
+  const name = document.getElementById('dname').value.trim();
+  localStorage.setItem('bj_name', name);
+  setBusy(true);
+  try{ const j = await api('create-game',{ name }); await enterGame(j.game_id, j.room_code); }
+  catch(e){ setMsg(e.message,false); }
+  setBusy(false);
+}
+async function doJoin(){
+  const name = document.getElementById('dname').value.trim();
+  const code = document.getElementById('jcode').value.trim().toUpperCase();
+  localStorage.setItem('bj_name', name);
+  if(!code){ setMsg('Escribí el código de la sala',false); return; }
+  setBusy(true);
+  try{ const j = await api('join-game',{ code, name }); await enterGame(j.game_id, j.room_code); }
+  catch(e){ setMsg(e.message,false); }
+  setBusy(false);
+}
+
+async function enterGame(gameId, roomCode){
+  ctx.gameId = gameId; ctx.roomCode = roomCode; setMsg('',true); seen.clear();
+  // estado inicial
+  const { data } = await sb.from('games').select('*').eq('id',gameId).single();
+  if(data){ ctx.hostId = data.host_id; ctx.roomCode = data.room_code; ctx.view = data.public_view; }
+  // realtime
+  if(ctx.channel) sb.removeChannel(ctx.channel);
+  ctx.channel = sb.channel('g-'+gameId)
+    .on('postgres_changes',{ event:'UPDATE', schema:'public', table:'games', filter:'id=eq.'+gameId },
+        p=>{ ctx.hostId=p.new.host_id; ctx.roomCode=p.new.room_code; ctx.view=p.new.public_view; render(); })
+    .on('postgres_changes',{ event:'*', schema:'public', table:'game_players', filter:'game_id=eq.'+gameId },
+        ()=> reloadRow())
+    .subscribe();
+  render();
+}
+async function reloadRow(){
+  const { data } = await sb.from('games').select('*').eq('id',ctx.gameId).single();
+  if(data){ ctx.hostId=data.host_id; ctx.view=data.public_view; render(); }
+}
+function leaveGame(silent){
+  if(ctx.channel) sb.removeChannel(ctx.channel);
+  ctx = { gameId:null, roomCode:null, hostId:null, view:null, channel:null, showScore:false, busy:false };
+  if(!silent) render();
+}
+
+// ============================================================
+//  ACCIONES DE JUEGO
+// ============================================================
+async function startGame(){ await guard(()=>api('start-game',{ game_id:ctx.gameId })); }
+async function act(a){ await guard(()=>api('action',{ game_id:ctx.gameId, action:a })); }
+async function dealer(a){ await guard(()=>api('dealer-action',{ game_id:ctx.gameId, action:a })); }
+async function nextRound(){ await guard(()=>api('next-round',{ game_id:ctx.gameId })); }
+async function guard(fn){
+  if(ctx.busy) return; ctx.busy=true; render();
+  try{ await fn(); }catch(e){ setMsg(e.message,false); }
+  ctx.busy=false; render();
+}
+
+// ============================================================
+//  HELPERS UI
+// ============================================================
+function setBusy(b){ ctx.busy=b; render(); }
+function setMsg(t,ok){ msg={text:t,ok:!!ok}; render(); }
+function toggleScore(){ ctx.showScore=!ctx.showScore; render(); }
+function isRed(s){ return s==='\u2665'||s==='\u2666'; }
+function handTotal(cards){ // solo para textos visibles
+  let t=0,a=0; for(const c of cards){ if(c.rank==='A'){a++;t+=11;} else if(['K','Q','J'].includes(c.rank)) t+=10; else t+=parseInt(c.rank,10);} while(t>21&&a>0){t-=10;a--;} return t;
+}
+function cardHTML(card){
+  const isNew=!seen.has(card.id); if(isNew) seen.add(card.id);
+  const cls='card '+(isRed(card.suit)?'red':'black')+(isNew?' deal':'');
+  return '<div class="'+cls+'"><span class="corner tl">'+card.rank+'<br>'+card.suit+'</span>'
+    +'<span class="pip">'+card.suit+'</span><span class="corner br">'+card.rank+'<br>'+card.suit+'</span></div>';
+}
+function backHTML(n){ let s=''; for(let i=0;i<n;i++) s+='<div class="card back"></div>'; return s; }
+
+// ============================================================
+//  RENDER
+// ============================================================
+function render(){
+  if(!session){ app().innerHTML = renderAuth(); return; }
+  if(!ctx.gameId){ app().innerHTML = renderHome(); return; }
+  const status = ctx.view?.status || 'lobby';
+  app().innerHTML = (status==='lobby' ? renderLobby() : renderTable()) + (ctx.showScore?scoreboard():'');
+}
+
+function renderAuth(){
+  const signup = authMode==='signup';
+  return '<div class="card-panel"><div class="brand"><div class="suit-row">\u2660 \u2665 \u2666 \u2663</div>'
+    +'<h1>Blackjack Online</h1><p>Iniciá sesión para jugar con tus amigos</p></div>'
+    +'<label class="lbl">Email</label><input id="email" class="inp" type="email" placeholder="vos@email.com">'
+    +'<label class="lbl">Contraseña</label><input id="pass" class="inp" type="password" placeholder="••••••••">'
+    +'<button class="btn gold" '+(ctx.busy?'disabled':'')+' onclick="'+(signup?'signUp':'signIn')+'()">'
+    +(signup?'Crear cuenta':'Entrar')+'</button>'
+    +'<div class="msg '+(msg.ok?'okmsg':'')+'">'+esc(msg.text)+'</div>'
+    +'<div class="switch">'+(signup
+        ? '¿Ya tenés cuenta? <a onclick="setMode(\'signin\')">Entrar</a>'
+        : '¿Primera vez? <a onclick="setMode(\'signup\')">Crear cuenta</a>')+'</div></div>';
+}
+
+function renderHome(){
+  const nm = esc(savedName());
+  return '<div class="card-panel"><div class="brand"><div class="suit-row">\u2660 \u2665 \u2666 \u2663</div>'
+    +'<h1>Blackjack Online</h1><p>Banca rotativa entre amigos</p></div>'
+    +'<label class="lbl">Tu nombre en la mesa</label>'
+    +'<input id="dname" class="inp" maxlength="14" placeholder="Cómo te ven los demás" value="'+nm+'">'
+    +'<button class="btn gold" '+(ctx.busy?'disabled':'')+' onclick="doCreate()">Crear mesa nueva</button>'
+    +'<div class="divider">o unite a una</div>'
+    +'<input id="jcode" class="inp" maxlength="5" placeholder="Código (5 letras)" style="text-transform:uppercase;letter-spacing:4px;text-align:center">'
+    +'<button class="btn ghost" '+(ctx.busy?'disabled':'')+' onclick="doJoin()">Unirme con código</button>'
+    +'<div class="msg '+(msg.ok?'okmsg':'')+'">'+esc(msg.text)+'</div>'
+    +'<div class="switch" style="margin-top:20px"><a onclick="signOut()">Cerrar sesión</a></div></div>';
+}
+
+function renderLobby(){
+  const seats = ctx.view?.seats || [];
+  const amHost = ctx.hostId===myId();
+  let list='';
+  seats.forEach((s,i)=>{
+    const isHost = false; // host = seat más bajo; lo marcamos abajo
+    list+='<div class="lp"><span class="dot">'+(i+1)+'</span><span>'+esc(s.name)+'</span>'
+      + (s.user_id===ctx.hostId?'<span class="host-tag">Anfitrión</span>': (s.user_id===myId()?'<span class="me-tag">Vos</span>':''))
+      +'</div>';
+  });
+  return '<div class="card-panel"><div class="brand"><div class="suit-row">\u2660 \u2665 \u2666 \u2663</div>'
+    +'<h1>Sala de espera</h1><p>Compartí el código para que se sumen</p></div>'
+    +'<div class="code-box">'+esc(ctx.roomCode||'')+'</div>'
+    +'<div class="lobby-players">'+list+'</div>'
+    + (amHost
+        ? '<button class="btn green" '+(seats.length<2||ctx.busy?'disabled':'')+' onclick="startGame()">'
+          + (seats.length<2?'Esperando jugadores…':'Empezar partida ('+seats.length+')')+'</button>'
+        : '<div class="waiting">Esperando a que el anfitrión empiece…</div>')
+    +'<div class="msg '+(msg.ok?'okmsg':'')+'">'+esc(msg.text)+'</div>'
+    +'<div class="switch" style="margin-top:16px"><a onclick="leaveGame()">Salir de la sala</a></div></div>';
+}
+
+function seatHTML(s, view){
+  const isBanca = s.role==='banca';
+  const isMe = s.user_id===myId();
+  const isCurrent = (view.status==='playing' && view.current_seat===s.seat)
+                 || (view.status==='dealer' && isBanca);
+  const cls='seat'+(isBanca?' banca':'')+(isCurrent?' active':'')+(isMe?' me':'')+(s.done&&!isBanca?' done':'');
+  let cardsStr=''; for(const c of s.cards) cardsStr+=cardHTML(c); cardsStr+=backHTML(s.hidden||0);
+  const valTxt = (isBanca && s.hidden>0)
+    ? '<span class="seat-val">Muestra <b>'+s.totalVisible+'</b></span>'
+    : '<span class="seat-val">Total <b>'+s.totalVisible+'</b></span>';
+  let badge='';
+  const rmap={win:['win','GANÓ 🟢'],lose:['lose','PERDIÓ 🔴'],push:['push','EMPATE 🟡'],blackjack:['blackjack','BLACKJACK ⭐'],bust:['bust','SE PASÓ 💥']};
+  if(s.result && rmap[s.result]){ const m=rmap[s.result]; badge='<span class="badge '+m[0]+'">'+m[1]+'</span>'; }
+  else if(isCurrent) badge='<span class="badge turn">'+(isBanca?'Juega la banca':(isMe?'Tu turno':'Jugando'))+'</span>';
+  else if(!isBanca && s.blackjack) badge='<span class="badge blackjack">BLACKJACK ⭐</span>';
+  else if(!isBanca && s.busted) badge='<span class="badge bust">SE PASÓ 💥</span>';
+  else if(!isBanca && s.done) badge='<span class="badge wait">Plantado</span>';
+  else if(!isBanca && view.status==='playing') badge='<span class="badge wait">Esperando</span>';
+  const role = isBanca?'<span class="role-chip banca">🃏 BANCA</span>':'<span class="role-chip player">Jugador</span>';
+  return '<div class="'+cls+'"><div class="seat-head"><span class="seat-name">'+esc(s.name)
+    +(isMe?' <span style="color:var(--gold);font-size:12px">(vos)</span>':'')+role+'</span>'+valTxt+'</div>'
+    +'<div class="cards">'+cardsStr+'</div>'+badge+'</div>';
+}
+
+function renderTable(){
+  const v = ctx.view; const seats=v.seats||[];
+  const banca = seats.find(s=>s.seat===v.banca_seat) || seats.find(s=>s.role==='banca');
+  const others = seats.filter(s=>s!==banca);
+  const mySeatObj = seats.find(s=>s.user_id===myId());
+  const mySeat = mySeatObj?mySeatObj.seat:null;
+  const nPlayers = seats.length;
+  const cycle = Math.floor((v.round-1)/Math.max(1,nPlayers))+1;
+
+  // status line
+  let status='';
+  if(v.status==='playing'){ const cur=seats.find(s=>s.seat===v.current_seat);
+    status = cur ? ('Juega <span class="who">'+esc(cur.name)+'</span>'+(cur.user_id===myId()?' — ¡te toca!':'')) : ''; }
+  else if(v.status==='dealer') status='La banca <span class="who">'+esc(banca?banca.name:'')+'</span> juega su mano';
+  else if(v.status==='results') status='Ronda terminada';
+
+  // controles
+  let controls='';
+  if(v.status==='playing' && v.current_seat===mySeat){
+    controls='<div class="controls"><div class="ctx">Es tu turno — total '+(mySeatObj?mySeatObj.totalVisible:'')+'</div>'
+      +'<button class="act-btn hit" '+(ctx.busy?'disabled':'')+' onclick="act(\'hit\')">Pedir carta</button>'
+      +'<button class="act-btn stand" '+(ctx.busy?'disabled':'')+' onclick="act(\'stand\')">Plantarse</button></div>';
+  } else if(v.status==='dealer' && mySeat===v.banca_seat){
+    controls='<div class="controls"><div class="ctx">Sos la banca — total '+(banca?banca.totalVisible:'')+'</div>'
+      +'<button class="act-btn hit" '+(ctx.busy?'disabled':'')+' onclick="dealer(\'hit\')">Pedir carta</button>'
+      +'<button class="act-btn stand" '+(ctx.busy?'disabled':'')+' onclick="dealer(\'stand\')">Plantarse</button>'
+      +'<button class="act-btn auto" '+(ctx.busy?'disabled':'')+' onclick="dealer(\'auto\')">Automático (17)</button></div>';
+  } else if(v.status==='results'){
+    const canNext = ctx.hostId===myId() || mySeat===v.banca_seat;
+    controls = canNext
+      ? '<div class="controls"><button class="act-btn next" '+(ctx.busy?'disabled':'')+' onclick="nextRound()">Siguiente ronda →</button></div>'
+      : '<div class="waiting">Esperando a la banca para la próxima ronda…</div>';
+  } else if(v.status==='playing'){
+    controls='<div class="waiting">Esperando a los demás jugadores…</div>';
+  } else if(v.status==='dealer'){
+    controls='<div class="waiting">La banca está jugando…</div>';
+  }
+
+  // resumen
+  let summary='';
+  if(v.status==='results'){
+    const lmap={win:['win','🟢 Ganó'],lose:['lose','🔴 Perdió'],push:['push','🟡 Empate'],blackjack:['blackjack','⭐ Blackjack'],bust:['bust','💥 Se pasó']};
+    let items='';
+    for(const s of others){ const m=lmap[s.result]||['wait','—'];
+      items+='<div class="sum-item" style="background:rgba(2,22,15,.5);border-radius:12px;padding:10px 14px;min-width:150px;text-align:center">'
+        +'<div style="font-weight:700;font-size:14px">'+esc(s.name)+'</div>'
+        +'<div style="margin-top:6px;font-size:13px;font-weight:800" class="rs '+m[0]+'">'+m[1]+'</div>'
+        +'<div class="seat-val" style="margin-top:4px">'+s.totalVisible+' pts</div></div>';
+    }
+    const bTxt = banca && banca.busted ? 'se pasó con '+banca.totalVisible : 'cerró en '+(banca?banca.totalVisible:'');
+    summary='<div style="margin-top:20px;background:rgba(3,28,20,.5);border:1px solid rgba(217,178,90,.3);border-radius:16px;padding:18px">'
+      +'<h3 style="color:var(--gold);text-align:center;margin-bottom:12px">Resumen — la banca ('+esc(banca?banca.name:'')+') '+bTxt+'</h3>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">'+items+'</div></div>';
+  }
+
+  let othersStr=''; for(const s of others) othersStr+=seatHTML(s,v);
+
+  return '<div class="topbar"><div class="round-tag"><span class="round">Ronda '+v.round+'</span>'
+    +'<span class="cycle">Vuelta '+cycle+' · '+nPlayers+' jugadores</span>'
+    +'<span class="banca-now">🃏 Banca: '+esc(banca?banca.name:'')+'</span></div>'
+    +'<div class="top-actions"><button class="mini-btn" onclick="toggleScore()">📊 Marcador</button>'
+    +'<button class="mini-btn" onclick="leaveGame()">Salir</button></div></div>'
+    +'<div class="table"><div class="felt-line">— BLACKJACK PAGA 3 A 2 · LA BANCA SE PLANTA EN 17 —</div>'
+    +'<div class="status-line">'+status+'</div>'
+    +'<div class="banca-seat-wrap">'+(banca?seatHTML(banca,v):'')+'</div>'
+    +'<div class="players-row">'+othersStr+'</div>'
+    +controls+summary
+    + (msg.text?'<div class="msg '+(msg.ok?'okmsg':'')+'">'+esc(msg.text)+'</div>':'')
+    +'</div>';
+}
+
+function scoreboard(){
+  const seats=(ctx.view?.seats)||[];
+  const ranked=[...seats].sort((a,b)=>(b.points||0)-(a.points||0));
+  let rows='';
+  ranked.forEach((s,r)=>{ const st=s.stats||{};
+    rows+='<tr'+(r===0?' class="lead"':'')+'><td class="name"><span class="rank-num'+(r===0?' g':'')+'">'+(r+1)+'</span>'
+      +esc(s.name)+(s.seat===ctx.view.banca_seat?' 🃏':'')+'</td><td class="pts">'+(s.points||0)+'</td>'
+      +'<td>'+(st.winsP||0)+'</td><td>'+(st.lossesP||0)+'</td><td>'+(st.pushes||0)+'</td><td>'+(st.blackjacks||0)+'</td>'
+      +'<td>'+(st.timesBanca||0)+'</td><td>'+(st.bancaWins||0)+'</td><td>'+(st.bancaLosses||0)+'</td></tr>';
+  });
+  return '<div class="overlay" onclick="if(event.target===this)toggleScore()"><div class="panel">'
+    +'<div class="panel-head"><h2>Marcador general</h2><button class="x-btn" onclick="toggleScore()">×</button></div>'
+    +'<table class="score"><thead><tr><th style="text-align:left">Jugador</th><th>Pts</th>'
+    +'<th>Gana</th><th>Pierde</th><th>Empate</th><th>BJ</th><th>Fue banca</th><th>Banca gana</th><th>Banca pierde</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>'
+    +'<div class="panel-note">Puntos = victorias + banca ganada + blackjacks×1.5. El 🃏 marca la banca de esta ronda.</div></div></div>';
+}
+
+// exponer handlers al HTML
+Object.assign(window,{ signIn,signUp,signOut,setMode:(m)=>{authMode=m;setMsg('',true);},
+  doCreate,doJoin,startGame,act,dealer,nextRound,toggleScore,leaveGame });
+
+init();
+</script>
+</body>
+</html>
