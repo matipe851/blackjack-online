@@ -93,3 +93,33 @@ empates, rotación, resolución). Se validó con 300 partidas aleatorias complet
   turno, reconexión si alguien cierra la pestaña.
 - Apuestas con fichas virtuales y ranking histórico.
 - Que el anfitrión elija la banca inicial (hoy arranca siendo él).
+
+---
+
+## Si algo no anda
+
+Abrí `https://TU-APP.vercel.app/api/health` en el navegador. Esa ruta no
+muestra ninguna clave, solo te dice qué está bien y qué no:
+
+```json
+{ "ok": true,
+  "SUPABASE_URL_cargada": true,
+  "SUPABASE_URL_valida": true,
+  "SUPABASE_SERVICE_ROLE_KEY_cargada": true,
+  "base_responde": "sí" }
+```
+
+- **Error 404 en esa ruta** → Vercel no está viendo la carpeta `api/`.
+  Revisá que los archivos estén en el repo dentro de `api/`.
+- **`SUPABASE_URL_cargada: false`** o **`..._KEY_cargada: false`** → faltan
+  las variables de entorno en Vercel (Settings → Environment Variables,
+  marcadas para *Production*). Después de agregarlas hay que **redeployar**.
+- **`base_responde: "error: ..."`** → la key es de otro proyecto, o falta
+  correr `schema.sql` en el SQL Editor de Supabase.
+- **"Failed to fetch" al crear cuenta o entrar** → ese error *no* pasa por
+  `/api/`: son `SUPABASE_URL` / `SUPABASE_ANON` mal puestos arriba del
+  `<script>` en `index.html`. Ojo con pegar la línea entera adentro de las
+  comillas: tiene que quedar solo la URL.
+- **Creás la cuenta pero no te deja entrar** → Supabase está pidiendo
+  confirmar el email. Authentication → Providers → Email → "Confirm email"
+  en off, y creá la cuenta de nuevo.
