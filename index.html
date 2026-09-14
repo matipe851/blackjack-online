@@ -192,22 +192,67 @@ async function init(){
   sb.auth.onAuthStateChange((_e, s)=>{ session = s; if(!s){ leaveGame(true); } render(); });
   render();
 }
-async function signIn(){
-  const email = document.getElementById('email').value.trim();
-  const pass  = document.getElementById('pass').value;
-  setBusy(true);
-  const { error } = await sb.auth.signInWithPassword({ email, password:pass });
-  setBusy(false);
-  if(error){ setMsg(error.message,false); } else { setMsg('',true); render(); }
+// Traduce los mensajes que devuelve Supabase, que vienen en inglés.
+function traducir(m){
+  const t = String(m||'');
+  if(/invalid login credentials/i.test(t)) return 'Email o contraseña incorrectos';
+  if(/email not confirmed|not_confirmed/i.test(t)) return 'La cuenta todavía no está activada';
+  if(/user already registered|already exists/i.test(t)) return 'Ese mail ya tiene cuenta. Tocá "Entrar".';
+  if(/password should be at least/i.test(t)) return 'La contraseña tiene que tener al menos 6 caracteres';
+  if(/unable to validate email|invalid format/i.test(t)) return 'Escribí un email válido';
+  if(/failed to fetch|networkerror/i.test(t)) return 'No pude conectarme. Revisá tu internet y volvé a probar.';
+  return t;
 }
-async function signUp(){
-  const email = document.getElementById('email').value.trim();
-  const pass  = document.getElementById('pass').value;
+
+// Llamada al servidor SIN sesión (para registrarse, cuando todavía no hay login).
+async function apiPublica(path, body){
+  const r = await fetch('/api/'+path, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(body||{}),
+  });
+  const j = await r.json().catch(()=>({error:'Respuesta inválida del servidor'}));
+  if(!r.ok) throw new Error(j.error || 'Error del servidor');
+  return j;
+}
+
+function credenciales(){
+  return {
+    email: document.getElementById('email').value.trim(),
+    pass:  document.getElementById('pass').value,
+  };
+}
+
+async function signIn(){
+  const { email, pass } = credenciales();
   setBusy(true);
-  const { error } = await sb.auth.signUp({ email, password:pass });
+  let { error } = await sb.auth.signInWithPassword({ email, password:pass });
+  // Cuenta creada antes de que el registro pasara por el servidor: quedó sin
+  // confirmar. La activamos desde el backend y reintentamos, así no hay que
+  // tocar nada en el panel de Supabase.
+  if(error && /not confirmed|not_confirmed/i.test(error.message||'')){
+    try{
+      await apiPublica('signup', { email, password: pass });
+      ({ error } = await sb.auth.signInWithPassword({ email, password: pass }));
+    }catch(e){ /* si no se pudo, dejamos el error original */ }
+  }
   setBusy(false);
-  if(error){ setMsg(error.message,false); }
-  else setMsg('Cuenta creada. Si tu proyecto pide confirmar el mail, revisá tu casilla; si no, ya podés entrar.',true);
+  if(error){ setMsg(traducir(error.message),false); } else { setMsg('',true); render(); }
+}
+
+async function signUp(){
+  const { email, pass } = credenciales();
+  setBusy(true);
+  try{
+    // El servidor crea la cuenta ya confirmada; no hace falta mail de validación.
+    await apiPublica('signup', { email, password: pass });
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw new Error(traducir(error.message));
+    setMsg('',true); render();
+  }catch(e){
+    setMsg(traducir(e.message), false);
+  }
+  setBusy(false);
 }
 async function signOut(){ await sb.auth.signOut(); }
 

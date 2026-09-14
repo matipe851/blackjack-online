@@ -20,9 +20,9 @@ Mismo stack que ya usás en TalentIA: **Supabase** (Auth + Postgres) + **Vercel*
    - **anon public** key
    - **service_role** key (esta es SECRETA, no va en el front)
 
-> Auth: por defecto Supabase pide confirmar el email. Para probar rápido entre
-> amigos podés desactivarlo en **Authentication → Providers → Email** →
-> "Confirm email" en off. Después lo volvés a activar si querés.
+> Auth: no hace falta tocar nada. El registro pasa por `api/signup.js`, que crea
+> la cuenta **ya confirmada** con la service_role, así que Supabase no manda
+> mail de validación ni hay que desactivar "Confirm email" en el panel.
 
 ## 2) Poner las claves
 
@@ -44,6 +44,7 @@ Mismo stack que ya usás en TalentIA: **Supabase** (Auth + Postgres) + **Vercel*
    package.json
    schema.sql
    api/_lib.js
+   api/signup.js
    api/create-game.js
    api/join-game.js
    api/start-game.js
@@ -120,6 +121,6 @@ muestra ninguna clave, solo te dice qué está bien y qué no:
   `/api/`: son `SUPABASE_URL` / `SUPABASE_ANON` mal puestos arriba del
   `<script>` en `index.html`. Ojo con pegar la línea entera adentro de las
   comillas: tiene que quedar solo la URL.
-- **Creás la cuenta pero no te deja entrar** → Supabase está pidiendo
-  confirmar el email. Authentication → Providers → Email → "Confirm email"
-  en off, y creá la cuenta de nuevo.
+- **"Email not confirmed"** → es una cuenta creada antes de que el registro
+  pasara por `/api/signup`. Tocá **Entrar** igual: el front detecta el caso,
+  le pide al servidor que la active y reintenta solo.
