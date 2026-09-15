@@ -234,7 +234,12 @@ async function signIn(){
     try{
       await apiPublica('signup', { email, password: pass });
       ({ error } = await sb.auth.signInWithPassword({ email, password: pass }));
-    }catch(e){ /* si no se pudo, dejamos el error original */ }
+    }catch(e){
+      // si la activación falla, mostramos por qué en vez de esconderlo
+      setBusy(false);
+      setMsg('No pude activar la cuenta — ' + traducir(e.message), false);
+      return;
+    }
   }
   setBusy(false);
   if(error){ setMsg(traducir(error.message),false); } else { setMsg('',true); render(); }
